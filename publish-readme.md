@@ -61,7 +61,7 @@ After that, you can return to testing.
 1. If the package looks good, you can deploy this to PyPI. In your terminal, run:
 
 ```
-twine upload dist/*
+py -m twine upload dist/*
 ```
 
 And we are done!
