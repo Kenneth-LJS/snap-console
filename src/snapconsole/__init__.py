@@ -1,1 +1,1 @@
-from snapconsole.snapconsole import SnapConsole, LogEntry
+from .snapconsole import SnapConsole, LogEntry, LogsAlignPosition, TextboxAlignPosition

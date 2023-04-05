@@ -1,11 +1,12 @@
 import curses
 import asyncio
 from contextlib import suppress
+from enum import Enum
 from typing import Callable, NamedTuple, Optional, Union
 from dataclasses import dataclass
 
-from snapconsole.textbox import Textbox
-from snapconsole.wrappedlist import WrappedListDescriptor
+from .textbox import Textbox
+from .wrappedlist import WrappedListDescriptor
 
 LogSubEntry = Union[int, str]
 LogEntry = Union[str, list[LogSubEntry]]
@@ -126,6 +127,14 @@ ConsoleSize = NamedTuple('ConsoleSize', width=int, height=int)
 HANDLE_CH_NO_CH = object()
 HANDLE_CH_CONTINUE = object()
 
+class LogsAlignPosition(Enum):
+    BOTTOM = 'bottom'
+    TOP = 'top'
+
+class TextboxAlignPosition(Enum):
+    BOTTOM = 'bottom'
+    TOP = 'top'
+
 class SnapConsole:
     logs = WrappedListDescriptor('_noutrefresh_display')
     header = WrappedListDescriptor('_noutrefresh_display')
@@ -136,15 +145,15 @@ class SnapConsole:
         self,
         command_store_count: int = 100,
         log_splitter: LogEntrySplitter = default_log_splitter,
-        logs_align_top: bool = False,
-        textbox_align_top: bool = False,
+        logs_align_position: LogsAlignPosition = LogsAlignPosition.BOTTOM,
+        textbox_align_position: TextboxAlignPosition = TextboxAlignPosition.BOTTOM,
         resize_callback: Optional[Callable[[ConsoleSize], None]] = None,
     ):
         self.command_store_count = command_store_count
         self.log_splitter = log_splitter
         self.resize_callback = resize_callback
-        self._logs_align_top = logs_align_top
-        self._textbox_align_top = textbox_align_top
+        self._logs_align_position = logs_align_position
+        self._textbox_align_position = textbox_align_position
 
         self.logs = []
         self.header = []
@@ -197,21 +206,21 @@ class SnapConsole:
         scr_height, scr_width = self.stdscr.getmaxyx()
         if window_type == 'display':
             return WindowCoords(
-                y=1 if self.textbox_align_top else 0,
+                y=1 if self.textbox_align_position == TextboxAlignPosition.TOP else 0,
                 x=0,
                 height=scr_height - 1,
                 width=scr_width,
             )
         elif window_type == 'arrow':
             return WindowCoords(
-                y=0 if self.textbox_align_top else scr_height - 1,
+                y=0 if self.textbox_align_position == TextboxAlignPosition.TOP else scr_height - 1,
                 x=0,
                 height=1,
                 width=2,
             )
         elif window_type == 'text':
             return WindowCoords(
-                y=0 if self.textbox_align_top else scr_height - 1,
+                y=0 if self.textbox_align_position == TextboxAlignPosition.TOP else scr_height - 1,
                 x=2,
                 height=1,
                 width=scr_width - 2,
@@ -270,7 +279,7 @@ class SnapConsole:
         log_lines.reverse()
         height_left -= len(log_lines)
 
-        if self.logs_align_top:
+        if self.logs_align_position == LogsAlignPosition.TOP:
             lines = header_lines + log_lines + ([[]] * height_left) + footer_lines
         else:
             lines = header_lines + ([[]] * height_left) + log_lines + footer_lines
@@ -387,21 +396,21 @@ class SnapConsole:
         return await self.async_get_input()
 
     @property
-    def logs_align_top(self):
-        return self._logs_align_top
+    def logs_align_position(self):
+        return self._logs_align_position
 
-    @logs_align_top.setter
-    def logs_align_top(self, new_val: bool):
-        self._logs_align_top = new_val
+    @logs_align_position.setter
+    def logs_align_position(self, new_val: LogsAlignPosition):
+        self._logs_align_position = new_val
         self.do_draw()
 
     @property
-    def textbox_align_top(self):
-        return self._textbox_align_top
+    def textbox_align_position(self):
+        return self._textbox_align_position
 
-    @textbox_align_top.setter
-    def textbox_align_top(self, new_val: bool):
-        self._textbox_align_top = new_val
+    @textbox_align_position.setter
+    def textbox_align_position(self, new_val: TextboxAlignPosition):
+        self._textbox_align_position = new_val
         self._init_size()
         self.do_draw()
 
